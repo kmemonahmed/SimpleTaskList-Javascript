@@ -1,4 +1,3 @@
-let task_arr = [];
 text_box = document.getElementById('task_input');
 add_button = document.getElementById('task_add');
 error = document.getElementById('error');
@@ -8,6 +7,7 @@ all_clear = document.querySelector("#clear");
 this_ul = document.getElementById('show_task');
 warning = document.querySelector('#warning')
 auto_id = 0;
+document.addEventListener('DOMContentLoaded', get_data)
 
 input_form.addEventListener('submit', get_task)
 
@@ -21,24 +21,26 @@ function get_task (e) {
             text_box.style.borderColor = "red";
         }
         else {
-        task_arr.push(task);
-        error.style.display = 'none';
-        text_box.value = ''
-        text_box.focus()
-        text_box.style.borderColor = "#48CDCB";
+            error.style.display = 'none';
+            text_box.value = ''
+            text_box.focus()
+            text_box.style.borderColor = "#48CDCB";
 
-        var ul = document.getElementById("show_task");
-        var li = document.createElement("li");
-        li.appendChild(document.createTextNode(task + '   '));
-        auto_id_str = auto_id.toString()
-        li.id = auto_id_str
-        link = document.createElement('a');
-        link.setAttribute('href', '#')
-        link.innerHTML = 'x';
-        link.setAttribute('onclick', `remove_li(${auto_id_str})`);
-        li.appendChild(link)
-        ul.appendChild(li);
-        auto_id+=1;
+            store = new LocalStorage();
+            store.task_store(task);
+
+            var ul = document.getElementById("show_task");
+            var li = document.createElement("li");
+            li.appendChild(document.createTextNode(task + '   '));
+            auto_id_str = auto_id.toString()
+            li.id = auto_id_str
+            link = document.createElement('a');
+            link.setAttribute('href', '#')
+            link.innerHTML = 'x';
+            link.setAttribute('onclick', `remove_li(${auto_id_str})`);
+            li.appendChild(link)
+            ul.appendChild(li);
+            auto_id+=1;
         }
     e.preventDefault()
     warning.innerHTML = ''
@@ -46,19 +48,21 @@ function get_task (e) {
 
 
 function remove_li(e) {
-    item = document.getElementById(e)
+    item = document.getElementById(e);
+    store = new LocalStorage();
+    store.remove_task(item)
     item.remove()
 }
 
 all_clear.onclick = function(){
-    if (task_arr.length < 1) {
+    if (localStorage.getItem('tasks') === null) {
         warning.style.color = 'red';
         warning.innerText="No Task To Clear"
         warning.style.display = 'block'
     }
     else {
+    localStorage.clear();
     this_ul.innerHTML = '';
-    task_arr = []
     }
 }
 
@@ -80,3 +84,71 @@ function filter() {
     }
 }
 
+class LocalStorage{
+    constructor(){
+        let tasks;
+        this.tasks = tasks;
+    }
+
+    task_check(){
+        if (localStorage.getItem('tasks') === null){
+            this.tasks = [];
+        }
+        else {
+            this.tasks = JSON.parse(localStorage.getItem('tasks'));
+        }
+    }
+
+    task_store(task){
+        this.task_check();
+        this.tasks.push(task);
+        localStorage.setItem('tasks', JSON.stringify(this.tasks))
+    }
+    
+    get_task(){
+        this.task_check()
+        this.tasks.forEach(task => {
+
+        var ul = document.getElementById("show_task");
+        var li = document.createElement("li");
+        li.appendChild(document.createTextNode(task + '   '));
+        let auto_id_str = auto_id.toString()
+        li.id = auto_id_str
+        let link = document.createElement('a');
+        link.setAttribute('href', '#')
+        link.innerHTML = 'x';
+        link.setAttribute('onclick', `remove_li(${auto_id_str})`);
+        li.appendChild(link)
+        ul.appendChild(li);
+        auto_id+=1;
+
+        });
+    }
+
+    remove_task(item){
+        this.task_check();
+        let li = item;
+        li.removeChild(li.lastChild);
+        
+        this.tasks.forEach((task, index) =>{
+            if (li.innerText.trim()  === task) {
+                if (this.tasks.length <2){
+                    
+                    localStorage.clear()
+                }
+                else{
+                    this.tasks.splice(index, 1);
+        localStorage.setItem('tasks', JSON.stringify(this.tasks));
+
+                }
+            }
+        });
+    }
+
+}
+
+function get_data(){
+    store = new LocalStorage();
+    store.get_task();
+
+}
